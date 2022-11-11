@@ -29,9 +29,11 @@ class Player(Entity):
         self.obstacle_sprites = obstacle_sprites
 
         self.stats = {"health":100, 'speed':3, 'attack':5}
+        self.max_stats = {"health":200, 'speed':5, 'attack':30}
+        self.upgrade_cost = {"health":1, 'speed':1, 'attack':1}
         self.health = self.stats['health'] * 0.5
         self.speed = self.stats['speed']
-        self.exp = 2000
+        self.exp = 500
 
     def import_player_assets(self):
         character_path = 'graphics/player/'
@@ -48,8 +50,8 @@ class Player(Entity):
     def input(self):
         keys = pygame.key.get_pressed()
         mouse_pressed = pygame.mouse.get_pressed()
-
         mouse_pos = pygame.mouse.get_pos()
+
         if keys[pygame.K_UP] or keys[pygame.K_w]:
             self.direction.y = -1
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
@@ -107,6 +109,12 @@ class Player(Entity):
 
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center = self.hitbox.center)
+
+    def get_value_by_index(self, index):
+        return list(self.stats.values())[index]
+
+    def get_cost_by_index(self, index):
+        return list(self.upgrade_cost.values())[index]
 
     def update(self):
         self.input()

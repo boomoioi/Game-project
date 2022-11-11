@@ -16,6 +16,11 @@ TEXT_COLOR = '#EEEEEE'
 HEALTH_COLOR = 'red'
 UI_BORDER_COLOR_ACTIVE ='gold'
 
+TEXT_COLOR_SELECTD = '#000000'
+BAR_COLOR = '#EEEEEE'
+BAR_COLOR_SELECTED = '#000000'
+UPGRADE_BG_COLOR_SELECTED = '#EEEEEE'
+
 weapon_data = {
     'pistol' : {'cooldown':100, 'damage':15, 'graphic':'graphics/weapons/pistol/0.png'}
 }

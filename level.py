@@ -10,11 +10,13 @@ from debug import debug
 from weapon import Weapon
 from ui import UI
 import random
+from upgrade import Upgrade
 
 class Level:
     def __init__(self):
         #get display surface
         self.display_surface = pygame.display.get_surface()
+        self.game_paused = False
 
         #sprite setup
         self.visible_sprites = cameraGroup()
@@ -31,6 +33,7 @@ class Level:
         self.create_map()
 
         self.ui = UI()
+        self.upgrade = Upgrade(self.player)
 
     def create_map(self):
         layout = {
@@ -46,14 +49,14 @@ class Level:
                     if col != '-1':
                         x = col_index * TILESIZE
                         y = row_index * TILESIZE
-                        if style == 'boundary':
-                            Tile((x,y),[self.obstacle_sprites], 'invisible')
-                        if style == 'object':
-                            if col == '243':
-                                surf = graphics['object'][0]
-                            if col == '226':
-                                surf = graphics['object'][1]
-                            Tile((x,y),[self.visible_sprites, self.obstacle_sprites, self.attackable_sprties], 'object', surf)
+                        # if style == 'boundary':
+                        #     Tile((x,y),[self.obstacle_sprites], 'invisible')
+                        # if style == 'object':
+                        #     if col == '243':
+                        #         surf = graphics['object'][0]
+                        #     if col == '226':
+                        #         surf = graphics['object'][1]
+                        #     Tile((x,y),[self.visible_sprites, self.obstacle_sprites, self.attackable_sprties], 'object', surf)
 
         #         if col == 'x':
         #             Tile((x,y), [self.visible_sprites,self.obstacle_sprites])
@@ -65,6 +68,11 @@ class Level:
     def attack(self):
         self.current_attack = Bullet(self.player, [self.visible_sprites, self.attack_sprites], pygame.mouse.get_pos())
         
+    def add_exp(self, amount):
+        self.player.exp += amount
+
+    def toggle_menu(self):
+        self.game_paused = not self.game_paused
 
     def player_attack_logic(self):
         if self.attack_sprites:
@@ -75,12 +83,11 @@ class Level:
                         if(target_sprite.sprite_type == 'enemy'):
                             target_sprite.get_damage(self.player)
                             print(target_sprite.health)
-                        else:
-                            attack_sprite .kill()
+                        attack_sprite .kill()
                     
     def create_enemy(self):
         if self.can_create:
-            Enemy('skeleton', (random.randint(0,40)*TILESIZE,random.randint(0,20)*TILESIZE), [self.visible_sprites, self.attackable_sprties], self.obstacle_sprites)
+            Enemy('skeleton', (random.randint(0,40)*TILESIZE,random.randint(0,20)*TILESIZE), [self.visible_sprites, self.attackable_sprties], self.obstacle_sprites, self.add_exp)
             self.can_create = False
             self.start_time = pygame.time.get_ticks()
 
@@ -91,11 +98,15 @@ class Level:
 
     def run(self):
         self.visible_sprites.custom_draw()
-        self.visible_sprites.update()
-        self.visible_sprites.enemy_update(self.player)
         self.ui.display(self.player)
-        self.player_attack_logic()
-        self.create_enemy()
+        if self.game_paused:
+            self.upgrade.display()
+        else:
+            self.visible_sprites.update()
+            self.visible_sprites.enemy_update(self.player)
+            self.player_attack_logic()
+            self.create_enemy()
+        
         # debug(self.player.direction)
 
 class cameraGroup(pygame.sprite.Group):

@@ -4,7 +4,7 @@ from entity import Entity
 from support import *
 
 class Enemy(Entity):
-    def __init__(self, monster_name, pos , groups, obstacle_sprites):
+    def __init__(self, monster_name, pos , groups, obstacle_sprites, add_exp):
         super().__init__(groups)
 
         self.sprite_type = 'enemy'
@@ -19,6 +19,7 @@ class Enemy(Entity):
         self.rect = self.image.get_rect(topleft = pos)
         self.hitbox = self.rect.inflate(-17, -17)
         self.obstacle_sprites = obstacle_sprites
+        self.add_exp = add_exp
 
         self.monster_name = monster_name
         monster_info = monster_data[self.monster_name] 
@@ -109,6 +110,7 @@ class Enemy(Entity):
     def check_dead(self):
         if self.health <= 0:
             self.kill()
+            self.add_exp(self.exp)
 
     def update(self):
         self.move(self.speed)

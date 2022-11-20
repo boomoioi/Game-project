@@ -8,3 +8,7 @@ class Tile(pygame.sprite.Sprite):
         self.image = surface
         self.rect = self.image.get_rect(topleft = pos)
         self.hitbox = self.rect.inflate(0, -8)
+
+max_stats = {"health":200, 'heal':5, 'attack':30}
+for x in max_stats.keys():
+    print(x)

@@ -8,6 +8,7 @@ class Weapon(pygame.sprite.Sprite):
         full_path = f'graphics/weapons/{self.player.weapon}/{self.direction}.png'
         self.image = pygame.image.load(full_path).convert_alpha()
         
+        self.sprite_type = 'weapon'
         self.rect = self.image.get_rect(topleft = self.player.rect.midright)
         #graphic
     

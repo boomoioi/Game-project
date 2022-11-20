@@ -2,17 +2,19 @@ import pygame
 from settings import *
 from entity import Entity 
 from support import *
+import random
 
 class Enemy(Entity):
-    def __init__(self, monster_name, pos , groups, obstacle_sprites, add_exp):
+    def __init__(self, monster_name, pos , groups, obstacle_sprites, add_exp, level, visible=False):
         super().__init__(groups)
 
         self.sprite_type = 'enemy'
+        self.level = level
+        self.visible = visible
 
         #graphics
         self.import_graphics(monster_name)
-        self.image = pygame.Surface((32,32))
-        self.status = 'move'
+        self.status = 'move_right'
         self.image = self.animations[self.status][self.frame_index]
         self.animation_speed = 0.08
         
@@ -27,8 +29,9 @@ class Enemy(Entity):
         self.exp = monster_info['exp']
         self.speed = monster_info['speed']
         self.attack_damage = monster_info['damage']
-        self.resistance = monster_info['resistance']
         self.attack_radius = monster_info['attack_radius']
+
+        self.stop = False
 
         self.can_attack = True
         self.attack_time = None 
@@ -38,8 +41,16 @@ class Enemy(Entity):
         self.hit_time = None 
         self.invicibility_duration = 50
 
+        x = random.randint(-315,315)
+        y = random.randint(-315,315)
+        self.direction = pygame.math.Vector2((x,y)).normalize()
+        self.life = pygame.time.get_ticks()
+        
+        self.see = False
+        self.see_time = pygame.time.get_ticks()
+
     def import_graphics(self, name):
-        self.animations = {'move':[], 'attack':[]}
+        self.animations = {'move_right':[], 'move_left':[], 'attack':[]}
         main_path = f'graphics/enemy/{name}/'
         for animation in self.animations.keys():
             self.animations[animation] = import_folder(main_path + animation)
@@ -57,21 +68,40 @@ class Enemy(Entity):
         return(distance, direction)
 
     def get_status(self, player):
-        distance = self.get_player_distance_direction(player)[0]
-        if distance <= self.attack_radius and self.can_attack:
-            if self.status != 'attack':
-                self.frame_index = 0
-                player.health -= 10
-            self.status = 'attack'
+        if self.monster_name == 'ball':
+            if pygame.Rect.colliderect(self.rect, player.rect):
+                player.health -= monster_data[self.monster_name]['damage']
+                self.kill()
+                self.level.boss.ball_count -= 1
         else:
-            self.status = 'move'
-
+            distance = self.get_player_distance_direction(player)[0]
+            direction = self.get_player_distance_direction(player)[1]
+            self.stop = False
+            if distance <= self.attack_radius and self.can_attack:
+                if self.status != 'attack':
+                    self.frame_index = 0
+                    player.health -= monster_data[self.monster_name]['damage']
+                    if self.monster_name == 'bat':
+                        self.kill()
+                self.status = 'attack'
+            else:
+                if(direction.x > 0):
+                    self.status = 'move_right'
+                else:
+                    self.status = 'move_left'
+        
     def actions(self, player):
         if self.status == 'attack':
             self.attack_time = pygame.time.get_ticks()
-            self.direction = self.get_player_distance_direction(player)[1]
-        elif self.status == 'move':
-            self.direction = self.get_player_distance_direction(player)[1]
+            if self.monster_name == 'ball':
+                pass
+            else:
+                self.direction = self.get_player_distance_direction(player)[1]
+        elif 'move' in self.status:
+            if self.monster_name == 'ball':
+                pass
+            else:
+                self.direction = self.get_player_distance_direction(player)[1]
 
     def animate(self):
         animation = self.animations[self.status]
@@ -90,6 +120,9 @@ class Enemy(Entity):
             self.image.set_alpha(alpha)
         else:
             self.image.set_alpha(255)
+        
+        if not self.see and self.visible:
+            self.image.set_alpha(0)
 
     def cooldowns(self):
         curren_time = pygame.time.get_ticks()
@@ -101,9 +134,13 @@ class Enemy(Entity):
             if curren_time - self.hit_time >= self.invicibility_duration:
                 self.vulnerable = True
 
+        if self.see:
+            if curren_time - self.see_time >= 1000:
+                self.see = False
+
     def get_damage(self, player):
         if self.vulnerable:
-            self.health -= weapon_data[player.weapon]['damage']
+            self.health -= weapon_data[player.weapon]['damage'] + (10 * player.weapon_upgrade[player.weapon]) + player.stats['attack']
             self.vulnerable = False
             self.hit_time = pygame.time.get_ticks()
 
@@ -112,7 +149,25 @@ class Enemy(Entity):
             self.kill()
             self.add_exp(self.exp)
 
+    def check_coll(self):
+        collision_sprites = pygame.sprite.spritecollide(self, self.level.obstacle_sprites, False)
+        if collision_sprites: 
+            if self.visible:
+                self.see = True
+                self.see_time = pygame.time.get_ticks()
+            x = random.randint(-315,315)
+            y = random.randint(-315,315)
+            self.direction = pygame.math.Vector2((x,y)).normalize()
+        if not self.visible:
+            current = pygame.time.get_ticks()
+            if current - self.life > 10000:
+                self.kill()
+                self.level.boss.ball_count -= 1
+        
+
     def update(self):
+        if self.monster_name == 'ball':
+            self.check_coll()
         self.move(self.speed)
         self.animate()
         self.cooldowns()

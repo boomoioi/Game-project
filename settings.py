@@ -21,10 +21,25 @@ BAR_COLOR = '#EEEEEE'
 BAR_COLOR_SELECTED = '#000000'
 UPGRADE_BG_COLOR_SELECTED = '#EEEEEE'
 
+LEVEL_BASE = 1000
+LEVEL_MULTIPLIER = 1.06
+
 weapon_data = {
-    'pistol' : {'cooldown':100, 'damage':15, 'graphic':'graphics/weapons/pistol/0.png'}
+    'pistol' : {'cooldown':100, 'damage':20, 'graphic':'graphics/weapons/pistol/0.png'},
+    'banana' : {'cooldown':100, 'damage':60, 'graphic':'graphics/weapons/banana/0.png'},
+    'big' : {'cooldown':100, 'damage':40, 'graphic':'graphics/weapons/pistol/0.png'}
 }
 
 monster_data = {
-    'skeleton' : {'health':100, 'exp':100, 'damage':20, 'speed':2, 'resistance':3, 'attack_radius':65}
+    'skeleton' : {'health':100, 'exp':150, 'damage':20, 'speed':2, 'attack_radius':30},
+    'casper' : {'health':150, 'exp':250, 'damage':30, 'speed':2, 'attack_radius':30} ,
+    'bat' : {'health':1, 'exp':0, 'damage':20, 'speed':5, 'attack_radius':65} ,
+    'ball' : {'health':1, 'exp':0, 'damage':20, 'speed':5, 'attack_radius':65} ,
+    'alien' : {'health':200, 'exp':400, 'damage':40, 'speed':2, 'attack_radius':30}  
+}
+
+boss_data = {
+    'wizard' : {'health':10000, 'exp':0, 'damage':70, 'speed':2, 'attack_radius':10},  
+    'vampire' : {'health':20000, 'exp':0, 'damage':100, 'speed':2, 'attack_radius':10},  
+    'vetal' : {'health':30000, 'exp':0, 'damage':200, 'speed':2, 'attack_radius':10}  
 }

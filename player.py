@@ -1,16 +1,12 @@
-from cmath import sqrt
-from distutils.log import debug
-from importlib.util import set_loader
 import pygame
 from settings import *
 from support import import_folder
 from entity import Entity
 from debug import debug
-from bullet import Bullet
-
+from support import *
 
 class Player(Entity):
-    def __init__(self,pos,groups,obstacle_sprites, attack):
+    def __init__(self,pos,groups,obstacle_sprites, attack, level):
         super().__init__(groups)
         self.image = pygame.image.load('graphics/player.png').convert_alpha()
         self.rect = self.image.get_rect(topleft = pos)
@@ -19,34 +15,45 @@ class Player(Entity):
         self.import_player_assets()
         self.status = 'right'
 
+        self.level = level
+        self.upgrade_multiplier = self.level.menu.shopIn.upgrade_multiplier
+        self.weapon_upgrade = self.level.menu.shopIn.weapon_upgrade
+        self.name = self.level.menu.shopIn.player_name
 
         self.attacking = False
         self.attack_cooldown = 100
         self.attack_time = 0
-        self.weapon = 'pistol'
+        self.weapon = self.level.menu.shopIn.current_weapon
         self.attack = attack
 
         self.obstacle_sprites = obstacle_sprites
 
-        self.stats = {"health":100, 'speed':3, 'attack':5}
-        self.max_stats = {"health":200, 'speed':5, 'attack':30}
-        self.upgrade_cost = {"health":1, 'speed':1, 'attack':1}
+        self.stats = {"health":100, 'heal':100, 'attack':5}
+        self.max_stats = {"health":200, 'heal':5, 'attack':30}
+        self.upgrade_cost = {"health":1, 'heal':1, 'attack':1}
         self.health = self.stats['health'] * 0.5
-        self.speed = self.stats['speed']
+        self.speed = 3
         self.exp = 500
+        self.show_exp = self.exp
+        self.level_count = 1
+        self.max_exp = self.max_calculator(self.level_count)
+        self.sum_level_exp = 0
+        
+        self.kill_count = 0
+        self.boss_count = 0
+        self.level_upgrade = 1000000
+        self.score = 0
+        self.start = pygame.time.get_ticks()
 
     def import_player_assets(self):
         character_path = 'graphics/player/'
         self.animations = {
-            'left' : [], 'right': [],
-            'left_idle' : [], 'right_idle': [],
-            'left_attack' : [], 'right_attack': [],
+            'left' : [], 'right': []
         }
         for animation in self.animations.keys():
             full_path = character_path + animation
             self.animations[animation] = import_folder(full_path)
-        print(self.animations)
-
+            
     def input(self):
         keys = pygame.key.get_pressed()
         mouse_pressed = pygame.mouse.get_pressed()
@@ -77,19 +84,6 @@ class Player(Entity):
             self.attacking = True
             self.attack_time = pygame.time.get_ticks()
             self.attack()
-    
-    def get_status(self):
-        if self.direction.x == 0 and self.direction.y == 0:
-            if not 'idle' in self.status and not 'attack' in self.status:
-                self.status += '_idle'
-
-        if self.attacking:
-            # self.direction.x = 0
-            # self.direction.y = 0
-            if not 'attack' in self.status:
-                if 'idle' in self.status:
-                    self.status = self.status.replace('_idle', '')
-                self.status += '_attack'
 
     def cooldowns(self):
         current_time = pygame.time.get_ticks()
@@ -116,9 +110,32 @@ class Player(Entity):
     def get_cost_by_index(self, index):
         return list(self.upgrade_cost.values())[index]
 
+    def max_calculator(self, level):
+        if(level == 0):
+            return 0
+        return int((LEVEL_BASE * (LEVEL_MULTIPLIER**level))/10) * 10
+
+    def exp_updater(self):
+        self.show_exp = self.exp - self.sum_level_exp
+        if self.show_exp >= self.max_exp:
+            self.level_upgrade += 1
+            self.sum_level_exp += self.max_exp
+            self.level_count += 1
+            self.max_exp = self.max_calculator(self.level_count)
+            
+    def add_score(self):
+        self.score = int((pygame.time.get_ticks()-self.start)/100)
+
+    def check_dead(self):
+        if self.health <= 0:
+            self.level.over = True
+            self.level.start_over = pygame.time.get_ticks()
+
     def update(self):
+        self.check_dead()
+        self.add_score()
+        self.exp_updater()
         self.input()
         self.cooldowns()
-        self.get_status()
         self.animate()
         self.move(self.speed)
